@@ -1,5 +1,7 @@
 # Agent Collab
 
+![Agent Collab banner](https://raw.githubusercontent.com/egesabanci/agent-collab/main/assets/readme-banners/agent-collab-banner-evergreen-lake.png)
+
 A general-purpose coordination protocol and artifact generator for multiple AI coding agents working on one repository.
 
 ## Overview
@@ -87,7 +89,19 @@ The installable Python package. `cli.py` contains the Typer CLI and `coordinatio
 
 ## Installation And Use
 
-Install the CLI directly from GitHub:
+Install the CLI from PyPI:
+
+```bash
+python3 -m pip install agent-collab
+```
+
+Package page:
+
+```txt
+https://pypi.org/project/agent-collab/
+```
+
+Install the latest version directly from GitHub:
 
 ```bash
 python3 -m pip install "git+https://github.com/egesabanci/agent-collab.git"
