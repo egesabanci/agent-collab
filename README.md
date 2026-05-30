@@ -9,6 +9,7 @@
 [PyPI](https://pypi.org/project/agent-collab/) ·
 [Quick Start](#quick-start) ·
 [Workflow](#workflow) ·
+[Docs](#documentation) ·
 [CLI Reference](#cli-reference) ·
 [License](#license)
 
@@ -30,6 +31,20 @@ Use it when several agents, automation workflows, or human reviewers need to wor
 - **CLI-generated artifacts**: repeatable templates reduce ambiguity and make handoffs reviewable.
 - **Runtime-agnostic skill package**: `SKILL.md` can be used by any agent runtime that supports skill-style instructions.
 - **Human approval gates**: destructive, ambiguous, security-sensitive, or production-affecting changes are escalated instead of guessed.
+
+## Documentation
+
+The root README is the quick entry point. Detailed maintainer and implementation docs live in [docs/](docs/README.md):
+
+- [Codebase Map](docs/codebase-map.md)
+- [Architecture](docs/architecture.md)
+- [CLI Reference](docs/cli.md)
+- [Coordination Engine](docs/coordination-engine.md)
+- [Artifact Model](docs/artifact-model.md)
+- [Skill Package](docs/skill-package.md)
+- [Testing](docs/testing.md)
+- [Development And Release](docs/development-and-release.md)
+- [Maintenance Checklist](docs/maintenance-checklist.md)
 
 ## Quick Start
 
