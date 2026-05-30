@@ -64,6 +64,9 @@ agent-collab/
     agent_collab/
       cli.py
       coordination.py
+  tests/
+    test_cli.py
+    test_coordination.py
 ```
 
 ### `SKILL.md`
@@ -602,6 +605,13 @@ Validate the package and CLI with:
 ```bash
 python3 -B -m py_compile src/agent_collab/*.py
 agent-collab --help
+```
+
+Run the unit test suite:
+
+```bash
+python3 -m pip install -e ".[dev]"
+python3 -m pytest
 ```
 
 Smoke-test artifact generation in a temporary directory:
