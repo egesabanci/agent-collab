@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agent-collab"
+version = "0.1.0"
+description = "A general-purpose coordination protocol and CLI for multiple AI coding agents working on one repository."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+authors = [
+  { name = "Ege Sabanci", email = "egesabanci@outlook.com.tr" }
+]
+keywords = [
+  "ai-agents",
+  "agent-collaboration",
+  "git-worktrees",
+  "multi-agent",
+  "repository-coordination"
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Version Control :: Git",
+  "Topic :: Utilities"
+]
+dependencies = [
+  "typer>=0.12.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/egesabanci/agent-collab"
+Repository = "https://github.com/egesabanci/agent-collab"
+Issues = "https://github.com/egesabanci/agent-collab/issues"
+
+[project.scripts]
+agent-collab = "agent_collab.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agent_collab"]

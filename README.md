@@ -18,7 +18,7 @@ The core idea is simple:
 This repository is both:
 
 - A portable agent instruction package, with `SKILL.md` as the agent-facing entry point for runtimes that support skill-style instructions.
-- A small tooling package, with `scripts/agent_coordination.py` for creating standardized `.agent/` coordination files.
+- A pip-installable CLI package, with the `agent-collab` command for creating standardized `.agent/` coordination files.
 
 ## Why This Exists
 
@@ -42,13 +42,14 @@ Agent Collab addresses these failures by making coordination explicit, durable, 
 - Structured `.agent/` repository state
 - Task, handoff, review, test report, ADR, risk, conflict, ownership, and merge recommendation templates
 - Security and escalation rules for high-risk changes
-- A helper script for creating coordination artifacts consistently
+- A Typer-based CLI for creating coordination artifacts consistently
 - A quality gate for merge readiness
 
 ## Repository Layout
 
 ```txt
 agent-collab/
+  pyproject.toml
   SKILL.md
   README.md
   agents/
@@ -59,8 +60,10 @@ agent-collab/
     role-playbooks.md
     security-and-escalation.md
     worktree-and-branch-protocol.md
-  scripts/
-    agent_coordination.py
+  src/
+    agent_collab/
+      cli.py
+      coordination.py
 ```
 
 ### `SKILL.md`
@@ -75,24 +78,42 @@ Optional runtime metadata for platforms that read skill catalog metadata. It is 
 
 Detailed playbooks that keep `SKILL.md` concise while preserving a comprehensive protocol.
 
-### `scripts/agent_coordination.py`
+### `src/agent_collab/`
 
-A Python helper for creating `.agent/` coordination artifacts in a target repository.
+The installable Python package. `cli.py` contains the Typer CLI and `coordination.py` contains the artifact-generation logic.
 
 ## Installation And Use
 
-Clone this repository wherever you keep shared agent instructions or workflow tools:
+Install the CLI directly from GitHub:
+
+```bash
+python3 -m pip install "git+https://github.com/egesabanci/agent-collab.git"
+```
+
+Or clone this repository wherever you keep shared agent instructions or workflow tools:
 
 ```bash
 git clone git@github.com:egesabanci/agent-collab.git
 cd agent-collab
 ```
 
+Then install the CLI from the local checkout:
+
+```bash
+python3 -m pip install .
+```
+
+For local development, install it in editable mode:
+
+```bash
+python3 -m pip install -e .
+```
+
 Use it in any of these ways:
 
 - Ask an agent to follow `SKILL.md`.
 - Place this folder in your agent runtime's skill, plugin, or instruction directory if it supports one.
-- Run `scripts/agent_coordination.py` directly to create `.agent/` coordination artifacts.
+- Run the `agent-collab` CLI to create `.agent/` coordination artifacts.
 - Have human coordinators use the README and reference files as the team protocol.
 
 Example agent prompt:
@@ -106,13 +127,13 @@ Use Agent Collab to coordinate multiple coding agents safely on this repository 
 From the repository where agents will collaborate, initialize the coordination directory:
 
 ```bash
-python3 /path/to/agent-collab/scripts/agent_coordination.py init
+agent-collab init
 ```
 
 Create a task:
 
 ```bash
-python3 /path/to/agent-collab/scripts/agent_coordination.py new-task \
+agent-collab new-task \
   --id TASK-001 \
   --title "API Client Refactor" \
   --owner coordinator \
@@ -135,7 +156,7 @@ git worktree add ../repo-tester -b agent/test/TASK-001-api-client-refactor origi
 After implementation, create a handoff:
 
 ```bash
-python3 /path/to/agent-collab/scripts/agent_coordination.py handoff \
+agent-collab handoff \
   --task TASK-001-api-client-refactor \
   --role implementer \
   --branch agent/impl/TASK-001-api-client-refactor \
@@ -145,11 +166,11 @@ python3 /path/to/agent-collab/scripts/agent_coordination.py handoff \
 Create review and test reports:
 
 ```bash
-python3 /path/to/agent-collab/scripts/agent_coordination.py review \
+agent-collab review \
   --task TASK-001-api-client-refactor \
   --branch agent/impl/TASK-001-api-client-refactor
 
-python3 /path/to/agent-collab/scripts/agent_coordination.py test-report \
+agent-collab test-report \
   --task TASK-001-api-client-refactor \
   --branch agent/impl/TASK-001-api-client-refactor
 ```
@@ -157,7 +178,7 @@ python3 /path/to/agent-collab/scripts/agent_coordination.py test-report \
 Prepare merge readiness:
 
 ```bash
-python3 /path/to/agent-collab/scripts/agent_coordination.py merge-recommendation \
+agent-collab merge-recommendation \
   --task TASK-001-api-client-refactor \
   --recommendation needs_changes \
   --risk medium \
@@ -319,30 +340,30 @@ git diff
 git diff --stat
 ```
 
-## Helper Script Reference
+## CLI Reference
 
-The helper script is intentionally dependency-light and uses only Python's standard library.
+The CLI is built with Typer and installed as `agent-collab`.
 
 Run from the target repository root:
 
 ```bash
-python3 /path/to/agent-collab/scripts/agent_coordination.py <command>
+agent-collab <command>
 ```
 
 Or pass an explicit target:
 
 ```bash
-python3 /path/to/agent-collab/scripts/agent_coordination.py --root /path/to/repo <command>
+agent-collab <command> --root /path/to/repo
 ```
 
-The command examples below use `scripts/agent_coordination.py` for local development inside this repository. When coordinating another repository, replace that path with `/path/to/agent-collab/scripts/agent_coordination.py` or pass `--root`.
+The command examples below assume the package is installed in your current Python environment.
 
 ### `init`
 
 Create the `.agent/` directory structure.
 
 ```bash
-python3 scripts/agent_coordination.py init \
+agent-collab init \
   --project example-project \
   --phase planning \
   --protected-branches main,master,production,staging
@@ -353,7 +374,7 @@ python3 scripts/agent_coordination.py init \
 Create a task file.
 
 ```bash
-python3 scripts/agent_coordination.py new-task \
+agent-collab new-task \
   --id TASK-002 \
   --title "Improve checkout error handling" \
   --owner implementer \
@@ -368,7 +389,7 @@ python3 scripts/agent_coordination.py new-task \
 Create a role handoff.
 
 ```bash
-python3 scripts/agent_coordination.py handoff \
+agent-collab handoff \
   --task TASK-002-improve-checkout-error-handling \
   --role implementer \
   --branch agent/impl/TASK-002-improve-checkout-error-handling \
@@ -382,7 +403,7 @@ python3 scripts/agent_coordination.py handoff \
 Create an architecture decision record.
 
 ```bash
-python3 scripts/agent_coordination.py adr \
+agent-collab adr \
   --number 1 \
   --title "Use Server-Side API Wrapper"
 ```
@@ -392,7 +413,7 @@ python3 scripts/agent_coordination.py adr \
 Create a review template.
 
 ```bash
-python3 scripts/agent_coordination.py review \
+agent-collab review \
   --task TASK-002-improve-checkout-error-handling \
   --branch agent/impl/TASK-002-improve-checkout-error-handling \
   --status changes_requested \
@@ -404,7 +425,7 @@ python3 scripts/agent_coordination.py review \
 Create a test report template.
 
 ```bash
-python3 scripts/agent_coordination.py test-report \
+agent-collab test-report \
   --task TASK-002-improve-checkout-error-handling \
   --branch agent/impl/TASK-002-improve-checkout-error-handling \
   --recommendation needs_fix
@@ -415,7 +436,7 @@ python3 scripts/agent_coordination.py test-report \
 Create a conflict note.
 
 ```bash
-python3 scripts/agent_coordination.py conflict \
+agent-collab conflict \
   --task TASK-002-improve-checkout-error-handling \
   --title "Checkout API and Billing Boundary" \
   --type architectural \
@@ -427,7 +448,7 @@ python3 scripts/agent_coordination.py conflict \
 Create a file ownership map.
 
 ```bash
-python3 scripts/agent_coordination.py file-ownership \
+agent-collab file-ownership \
   --task TASK-002-improve-checkout-error-handling
 ```
 
@@ -436,7 +457,7 @@ python3 scripts/agent_coordination.py file-ownership \
 Create a human decision note.
 
 ```bash
-python3 scripts/agent_coordination.py human-decision \
+agent-collab human-decision \
   --task TASK-002-improve-checkout-error-handling \
   --title "Choose Billing Retry Policy" \
   --risk high
@@ -447,7 +468,7 @@ python3 scripts/agent_coordination.py human-decision \
 Create a final merge recommendation.
 
 ```bash
-python3 scripts/agent_coordination.py merge-recommendation \
+agent-collab merge-recommendation \
   --task TASK-002-improve-checkout-error-handling \
   --recommendation needs_human_decision \
   --risk high \
@@ -576,32 +597,32 @@ print("metadata ok")
 PY
 ```
 
-Validate the helper script with:
+Validate the package and CLI with:
 
 ```bash
-python3 -B -m py_compile scripts/agent_coordination.py
-python3 -B scripts/agent_coordination.py --help
+python3 -B -m py_compile src/agent_collab/*.py
+agent-collab --help
 ```
 
 Smoke-test artifact generation in a temporary directory:
 
 ```bash
 tmpdir="$(mktemp -d)"
-python3 scripts/agent_coordination.py --root "$tmpdir" init --project demo
-python3 scripts/agent_coordination.py --root "$tmpdir" new-task --id TASK-001 --title "Demo Task"
+agent-collab init --root "$tmpdir" --project demo
+agent-collab new-task --root "$tmpdir" --id TASK-001 --title "Demo Task"
 find "$tmpdir/.agent" -maxdepth 2 -type f | sort
 rm -rf "$tmpdir"
 ```
 
 ## Development Notes
 
-Keep `SKILL.md` concise and agent-facing. Put detailed protocol material in `references/`, and keep deterministic, repeatable generation behavior in `scripts/`.
+Keep `SKILL.md` concise and agent-facing. Put detailed protocol material in `references/`, and keep deterministic, repeatable generation behavior in `src/agent_collab/`.
 
 When changing the protocol:
 
 1. Update `SKILL.md` only if the runtime entry point changes.
 2. Update the relevant reference file for detailed behavior.
-3. Update `scripts/agent_coordination.py` when templates or artifact names change.
+3. Update `src/agent_collab/coordination.py` when templates or artifact names change, and `src/agent_collab/cli.py` when command behavior changes.
 4. Run validation and a temp-dir smoke test.
 5. Use a conventional commit message.
 

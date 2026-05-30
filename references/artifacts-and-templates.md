@@ -75,10 +75,10 @@ planned | in_progress | blocked | review_ready | testing | merge_ready | merged 
 Create a task:
 
 ```bash
-python3 scripts/agent_coordination.py new-task --id TASK-002 --title "API Client Refactor"
+agent-collab new-task --id TASK-002 --title "API Client Refactor"
 ```
 
-Run commands from the target repository root. If this skill is installed outside the target repository, resolve `scripts/agent_coordination.py` relative to the skill directory and pass `--root <repo-root>`.
+Run commands from the target repository root after installing the package. When coordinating another repository from elsewhere, pass `--root <repo-root>` to the command.
 
 ## Handoffs
 
@@ -191,7 +191,7 @@ Use file ownership maps for complex or parallel tasks. Include each agent's owne
 Create a file ownership map:
 
 ```bash
-python3 scripts/agent_coordination.py file-ownership --task TASK-002-api-client-refactor
+agent-collab file-ownership --task TASK-002-api-client-refactor
 ```
 
 Example:

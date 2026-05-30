@@ -3,14 +3,13 @@
 
 from __future__ import annotations
 
-import argparse
 import json
 import re
 import subprocess
 from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
-from typing import List, Optional
+from typing import Any, List, Optional
 
 
 AGENT_DIRS = [
@@ -101,7 +100,7 @@ def write_new(path: Path, content: str, force: bool = False) -> None:
     print(f"[write] {path}")
 
 
-def command_init(args: argparse.Namespace) -> None:
+def command_init(args: Any) -> None:
     root = repo_root(args.root)
     base = ensure_agent_dirs(root)
     project = args.project or root.name
@@ -141,7 +140,7 @@ def command_init(args: argparse.Namespace) -> None:
     write_new(base / "status.json", json.dumps(status, indent=2) + "\n", args.force)
 
 
-def command_new_task(args: argparse.Namespace) -> None:
+def command_new_task(args: Any) -> None:
     root = repo_root(args.root)
     base = ensure_agent_dirs(root)
     task_key = normalize_task_key(args.id, args.title)
@@ -237,7 +236,7 @@ def command_new_task(args: argparse.Namespace) -> None:
     write_new(base / "tasks" / f"{task_key}.md", dedent(content), args.force)
 
 
-def command_handoff(args: argparse.Namespace) -> None:
+def command_handoff(args: Any) -> None:
     root = repo_root(args.root)
     base = ensure_agent_dirs(root)
     task_key = normalize_task_key(args.task)
@@ -348,7 +347,7 @@ def command_handoff(args: argparse.Namespace) -> None:
     write_new(base / "handoffs" / file_name, dedent(content), args.force)
 
 
-def command_adr(args: argparse.Namespace) -> None:
+def command_adr(args: Any) -> None:
     root = repo_root(args.root)
     base = ensure_agent_dirs(root)
     number = str(args.number).zfill(3)
@@ -419,7 +418,7 @@ def command_adr(args: argparse.Namespace) -> None:
     write_new(base / "decisions" / f"ADR-{number}-{slug}.md", dedent(content), args.force)
 
 
-def command_review(args: argparse.Namespace) -> None:
+def command_review(args: Any) -> None:
     root = repo_root(args.root)
     base = ensure_agent_dirs(root)
     task_key = normalize_task_key(args.task)
@@ -494,7 +493,7 @@ def command_review(args: argparse.Namespace) -> None:
     write_new(base / "reviews" / file_name, dedent(content), args.force)
 
 
-def command_test_report(args: argparse.Namespace) -> None:
+def command_test_report(args: Any) -> None:
     root = repo_root(args.root)
     base = ensure_agent_dirs(root)
     task_key = normalize_task_key(args.task)
@@ -559,7 +558,7 @@ def command_test_report(args: argparse.Namespace) -> None:
     write_new(base / "test-reports" / file_name, dedent(content), args.force)
 
 
-def command_conflict(args: argparse.Namespace) -> None:
+def command_conflict(args: Any) -> None:
     root = repo_root(args.root)
     base = ensure_agent_dirs(root)
     task_key = normalize_task_key(args.task)
@@ -598,7 +597,7 @@ def command_conflict(args: argparse.Namespace) -> None:
     write_new(base / "risks" / f"{task_key}-conflict-{slug}.md", dedent(content), args.force)
 
 
-def command_merge_recommendation(args: argparse.Namespace) -> None:
+def command_merge_recommendation(args: Any) -> None:
     root = repo_root(args.root)
     base = ensure_agent_dirs(root)
     task_key = normalize_task_key(args.task)
@@ -660,7 +659,7 @@ def command_merge_recommendation(args: argparse.Namespace) -> None:
     write_new(base / "reviews" / file_name, dedent(content), args.force)
 
 
-def command_file_ownership(args: argparse.Namespace) -> None:
+def command_file_ownership(args: Any) -> None:
     root = repo_root(args.root)
     base = ensure_agent_dirs(root)
     task_key = normalize_task_key(args.task)
@@ -719,7 +718,7 @@ def command_file_ownership(args: argparse.Namespace) -> None:
     write_new(base / "protocols" / file_name, dedent(content), args.force)
 
 
-def command_human_decision(args: argparse.Namespace) -> None:
+def command_human_decision(args: Any) -> None:
     root = repo_root(args.root)
     base = ensure_agent_dirs(root)
     task_key = normalize_task_key(args.task)
@@ -775,130 +774,3 @@ def command_human_decision(args: argparse.Namespace) -> None:
     """
     file_name = f"{task_key}-human-decision-{slug}.md"
     write_new(base / "risks" / file_name, dedent(content), args.force)
-
-
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root", help="Repository root. Defaults to git root or cwd.")
-    subparsers = parser.add_subparsers(dest="command", required=True)
-
-    init_parser = subparsers.add_parser("init", help="Create .agent directory structure.")
-    init_parser.add_argument("--project")
-    init_parser.add_argument("--active-task")
-    init_parser.add_argument("--phase", default="planning")
-    init_parser.add_argument("--protected-branches", default="main,master,production,staging")
-    init_parser.add_argument("--force", action="store_true")
-    init_parser.set_defaults(func=command_init)
-
-    task_parser = subparsers.add_parser("new-task", help="Create a task file.")
-    task_parser.add_argument("--id", required=True)
-    task_parser.add_argument("--title", required=True)
-    task_parser.add_argument("--owner", default="unassigned")
-    task_parser.add_argument("--status", default="planned")
-    task_parser.add_argument("--risk", default="low", choices=["low", "medium", "high"])
-    task_parser.add_argument("--check", action="append", help="Required check. Repeatable.")
-    task_parser.add_argument("--force", action="store_true")
-    task_parser.set_defaults(func=command_new_task)
-
-    handoff_parser = subparsers.add_parser("handoff", help="Create a handoff template.")
-    handoff_parser.add_argument("--task", required=True)
-    handoff_parser.add_argument("--role", required=True)
-    handoff_parser.add_argument("--branch", required=True)
-    handoff_parser.add_argument("--worktree", required=True)
-    handoff_parser.add_argument(
-        "--status",
-        default="needs_review",
-        choices=["completed", "partially_completed", "blocked", "needs_review", "needs_tests"],
-    )
-    handoff_parser.add_argument("--next-agent", default="reviewer")
-    handoff_parser.add_argument("--force", action="store_true")
-    handoff_parser.set_defaults(func=command_handoff)
-
-    adr_parser = subparsers.add_parser("adr", help="Create an ADR template.")
-    adr_parser.add_argument("--number", required=True)
-    adr_parser.add_argument("--title", required=True)
-    adr_parser.add_argument("--force", action="store_true")
-    adr_parser.set_defaults(func=command_adr)
-
-    review_parser = subparsers.add_parser("review", help="Create a review template.")
-    review_parser.add_argument("--task", required=True)
-    review_parser.add_argument("--branch", required=True)
-    review_parser.add_argument("--reviewer", default="reviewer")
-    review_parser.add_argument(
-        "--status",
-        default="blocked",
-        choices=["approved", "changes_requested", "blocked", "needs_human_decision"],
-    )
-    review_parser.add_argument(
-        "--recommendation",
-        default="request_changes",
-        choices=["approve", "request_changes", "split_task", "abandon", "escalate"],
-    )
-    review_parser.add_argument("--force", action="store_true")
-    review_parser.set_defaults(func=command_review)
-
-    test_parser = subparsers.add_parser("test-report", help="Create a test report template.")
-    test_parser.add_argument("--task", required=True)
-    test_parser.add_argument("--branch", required=True)
-    test_parser.add_argument("--tester", default="tester")
-    test_parser.add_argument(
-        "--recommendation",
-        default="needs_more_tests",
-        choices=["merge_ready", "needs_fix", "needs_more_tests", "needs_human_decision"],
-    )
-    test_parser.add_argument("--force", action="store_true")
-    test_parser.set_defaults(func=command_test_report)
-
-    conflict_parser = subparsers.add_parser("conflict", help="Create a conflict note.")
-    conflict_parser.add_argument("--task", required=True)
-    conflict_parser.add_argument("--title", required=True)
-    conflict_parser.add_argument(
-        "--type",
-        default="unknown",
-        choices=["semantic", "textual", "architectural", "dependency", "test", "unknown"],
-    )
-    conflict_parser.add_argument("--requires-human", default="no", choices=["yes", "no"])
-    conflict_parser.add_argument("--force", action="store_true")
-    conflict_parser.set_defaults(func=command_conflict)
-
-    merge_parser = subparsers.add_parser(
-        "merge-recommendation", help="Create a final merge recommendation."
-    )
-    merge_parser.add_argument("--task", required=True)
-    merge_parser.add_argument(
-        "--recommendation",
-        default="needs_changes",
-        choices=["merge", "do_not_merge", "needs_changes", "needs_human_decision"],
-    )
-    merge_parser.add_argument("--risk", default="medium", choices=["low", "medium", "high"])
-    merge_parser.add_argument("--human-approval-required", default="yes", choices=["yes", "no"])
-    merge_parser.add_argument("--force", action="store_true")
-    merge_parser.set_defaults(func=command_merge_recommendation)
-
-    ownership_parser = subparsers.add_parser(
-        "file-ownership", help="Create a file ownership map template."
-    )
-    ownership_parser.add_argument("--task", required=True)
-    ownership_parser.add_argument("--force", action="store_true")
-    ownership_parser.set_defaults(func=command_file_ownership)
-
-    decision_parser = subparsers.add_parser(
-        "human-decision", help="Create a human decision note."
-    )
-    decision_parser.add_argument("--task", required=True)
-    decision_parser.add_argument("--title", required=True)
-    decision_parser.add_argument("--risk", default="medium", choices=["low", "medium", "high"])
-    decision_parser.add_argument("--force", action="store_true")
-    decision_parser.set_defaults(func=command_human_decision)
-
-    return parser
-
-
-def main() -> None:
-    parser = build_parser()
-    args = parser.parse_args()
-    args.func(args)
-
-
-if __name__ == "__main__":
-    main()

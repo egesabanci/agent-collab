@@ -25,13 +25,13 @@ Use Agent Collab to run multiple AI agents on one repository without shared work
 1. Initialize coordination files if `.agent/` does not exist:
 
    ```bash
-   python3 scripts/agent_coordination.py init
+   agent-collab init
    ```
 
 2. Create or read the task file before assigning agents:
 
    ```bash
-   python3 scripts/agent_coordination.py new-task --id TASK-001 --title "API Client Refactor"
+   agent-collab new-task --id TASK-001 --title "API Client Refactor"
    ```
 
 3. Decide whether work can run in parallel. Parallelize only when agents have disjoint file ownership or a documented coordination plan.
@@ -59,19 +59,19 @@ Use this repository structure:
   scratch/
 ```
 
-Run commands from the target repository root. If Agent Collab is installed elsewhere, resolve `scripts/agent_coordination.py` relative to this package directory and pass `--root <repo-root>`.
+Run commands from the target repository root after installing the package. When coordinating another repository from elsewhere, pass `--root <repo-root>` to the command.
 
 Create durable artifacts with:
 
 ```bash
-python3 scripts/agent_coordination.py handoff --task TASK-001-api-client-refactor --role implementer --branch agent/impl/TASK-001-api-client-refactor --worktree ../repo-implementer
-python3 scripts/agent_coordination.py review --task TASK-001-api-client-refactor --branch agent/impl/TASK-001-api-client-refactor
-python3 scripts/agent_coordination.py test-report --task TASK-001-api-client-refactor --branch agent/impl/TASK-001-api-client-refactor
-python3 scripts/agent_coordination.py adr --number 1 --title "Use Server-Side API Wrapper"
-python3 scripts/agent_coordination.py conflict --task TASK-001-api-client-refactor --title "API Client and Auth Changes"
-python3 scripts/agent_coordination.py file-ownership --task TASK-001-api-client-refactor
-python3 scripts/agent_coordination.py human-decision --task TASK-001-api-client-refactor --title "Choose Auth Boundary"
-python3 scripts/agent_coordination.py merge-recommendation --task TASK-001-api-client-refactor
+agent-collab handoff --task TASK-001-api-client-refactor --role implementer --branch agent/impl/TASK-001-api-client-refactor --worktree ../repo-implementer
+agent-collab review --task TASK-001-api-client-refactor --branch agent/impl/TASK-001-api-client-refactor
+agent-collab test-report --task TASK-001-api-client-refactor --branch agent/impl/TASK-001-api-client-refactor
+agent-collab adr --number 1 --title "Use Server-Side API Wrapper"
+agent-collab conflict --task TASK-001-api-client-refactor --title "API Client and Auth Changes"
+agent-collab file-ownership --task TASK-001-api-client-refactor
+agent-collab human-decision --task TASK-001-api-client-refactor --title "Choose Auth Boundary"
+agent-collab merge-recommendation --task TASK-001-api-client-refactor
 ```
 
 Read [references/artifacts-and-templates.md](references/artifacts-and-templates.md) for file names, required fields, source-of-truth priority, and complete template guidance.
