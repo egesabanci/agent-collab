@@ -1,13 +1,13 @@
 ---
 name: agent-collab
-description: Coordinate multiple AI coding agents working on the same repository with git worktree isolation, task ownership, structured handoffs, review, testing, merge readiness, conflict handling, and human escalation. Use when Codex needs to orchestrate parallel or sequential agents on one codebase, split work across architect/implementer/reviewer/tester/documentation/integration roles, create .agent coordination files, prevent agents from overwriting each other, or safely prepare multi-agent repository changes for merge.
+description: Coordinate multiple AI coding agents working on the same repository with git worktree isolation, task ownership, structured handoffs, review, testing, merge readiness, conflict handling, and human escalation. Use when an AI agent, agent runtime, automation workflow, or human coordinator needs to orchestrate parallel or sequential agents on one codebase, split work across architect/implementer/reviewer/tester/documentation/integration roles, create .agent coordination files, prevent agents from overwriting each other, or safely prepare multi-agent repository changes for merge.
 ---
 
 # Agent Collab
 
 ## Overview
 
-Use this skill to run multiple AI agents on one repository without shared working-directory edits, hidden state, duplicated work, or unreviewed merges. The repository is the coordination surface: task files, branches, worktrees, handoffs, reviews, test reports, ADRs, and status files must capture everything future agents need.
+Use Agent Collab to run multiple AI agents on one repository without shared working-directory edits, hidden state, duplicated work, or unreviewed merges. The repository is the coordination surface: task files, branches, worktrees, handoffs, reviews, test reports, ADRs, and status files must capture everything future agents need.
 
 ## Core Rules
 
@@ -59,7 +59,7 @@ Use this repository structure:
   scratch/
 ```
 
-Run commands from the target repository root. If the skill is installed elsewhere, resolve `scripts/agent_coordination.py` relative to this skill directory and pass `--root <repo-root>`.
+Run commands from the target repository root. If Agent Collab is installed elsewhere, resolve `scripts/agent_coordination.py` relative to this package directory and pass `--root <repo-root>`.
 
 Create durable artifacts with:
 
