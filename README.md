@@ -1,59 +1,284 @@
+![Agent Collab banner](https://raw.githubusercontent.com/egesabanci/agent-collab/main/assets/agent-collab-banner.png)
+
+<div align="center">
+
 # Agent Collab
 
-![Agent Collab banner](https://raw.githubusercontent.com/egesabanci/agent-collab/main/assets/readme-banners/agent-collab-banner-evergreen-lake.png)
+**A coordination protocol and CLI for multiple AI coding agents working safely in one repository.**
 
-A general-purpose coordination protocol and artifact generator for multiple AI coding agents working on one repository.
+[PyPI](https://pypi.org/project/agent-collab/) ·
+[Quick Start](#quick-start) ·
+[Workflow](#workflow) ·
+[CLI Reference](#cli-reference) ·
+[License](#license)
 
-## Overview
+[![PyPI](https://img.shields.io/pypi/v/agent-collab.svg)](https://pypi.org/project/agent-collab/)
+[![Python](https://img.shields.io/pypi/pyversions/agent-collab.svg)](https://pypi.org/project/agent-collab/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Agent Collab is a repository orchestration protocol for AI coding agents, automation workflows, and human coordinators. It gives a team of agents a shared operating model for working on the same codebase without overwriting each other, losing context, duplicating work, or merging unreviewed changes.
+</div>
 
-The core idea is simple:
+Agent Collab gives AI coding agents a shared operating model for parallel repository work. It combines a portable agent skill, a worktree-first collaboration protocol, and a Typer-based CLI that creates durable `.agent/` coordination artifacts.
 
-- Each agent works in its own git worktree.
-- Each agent owns a clearly scoped role, branch, and task.
-- The repository is the durable source of truth.
-- Agents communicate through structured files, diffs, commits, reviews, test reports, and handoff notes.
-- Protected branches are not edited directly.
-- Human approval remains required for destructive, ambiguous, production-affecting, or security-sensitive decisions.
+Use it when several agents, automation workflows, or human reviewers need to work on the same codebase without hidden chat state, unclear ownership, duplicated edits, or unreviewed merges.
 
-This repository is both:
+## Highlights
 
-- A portable agent instruction package, with `SKILL.md` as the agent-facing entry point for runtimes that support skill-style instructions.
-- A pip-installable CLI package, with the `agent-collab` command for creating standardized `.agent/` coordination files.
+- **Worktree-first collaboration**: each agent works in its own branch and worktree.
+- **Durable coordination state**: tasks, handoffs, reviews, test reports, risks, ADRs, and merge recommendations live in `.agent/`.
+- **Role-based workflow**: coordinator, architect, implementer, reviewer, tester, documentation, and integration roles have explicit responsibilities.
+- **CLI-generated artifacts**: repeatable templates reduce ambiguity and make handoffs reviewable.
+- **Runtime-agnostic skill package**: `SKILL.md` can be used by any agent runtime that supports skill-style instructions.
+- **Human approval gates**: destructive, ambiguous, security-sensitive, or production-affecting changes are escalated instead of guessed.
 
-## Why This Exists
+## Quick Start
 
-AI agents are effective at focused coding tasks, but multi-agent work fails quickly when agents share one working directory or rely on hidden chat state. Common failure modes include:
+Install the CLI:
 
-- Two agents editing the same files without knowing it.
-- A reviewer seeing final files but not the diff.
-- A tester not knowing which branch or worktree was tested.
-- An implementer claiming checks passed without actually running them.
-- Architectural decisions living only in a conversation transcript.
-- Generated files, lockfiles, migrations, or secrets slipping into a branch unnoticed.
-- Integration happening without a clear handoff, review, test report, or rollback plan.
+```bash
+python3 -m pip install agent-collab
+```
 
-Agent Collab addresses these failures by making coordination explicit, durable, and reviewable.
+Initialize coordination files in the repository where agents will collaborate:
 
-## What Agent Collab Provides
+```bash
+agent-collab init
+```
 
-- Worktree-first collaboration rules
-- Branch naming conventions for agent-owned work
-- Role playbooks for coordinator, architect, implementer, reviewer, tester, documentation, and integration agents
-- Structured `.agent/` repository state
-- Task, handoff, review, test report, ADR, risk, conflict, ownership, and merge recommendation templates
-- Security and escalation rules for high-risk changes
-- A Typer-based CLI for creating coordination artifacts consistently
-- A quality gate for merge readiness
+Create a task:
+
+```bash
+agent-collab new-task \
+  --id TASK-001 \
+  --title "Refactor API client" \
+  --owner coordinator \
+  --risk medium \
+  --check lint \
+  --check tests \
+  --check build
+```
+
+Create role-specific worktrees:
+
+```bash
+git fetch origin
+git worktree add ../repo-implementer -b agent/impl/TASK-001-refactor-api-client origin/main
+git worktree add ../repo-reviewer -b agent/review/TASK-001-refactor-api-client origin/main
+git worktree add ../repo-tester -b agent/test/TASK-001-refactor-api-client origin/main
+```
+
+After implementation, create the handoff, review, test report, and merge recommendation:
+
+```bash
+agent-collab handoff \
+  --task TASK-001-refactor-api-client \
+  --role implementer \
+  --branch agent/impl/TASK-001-refactor-api-client \
+  --worktree ../repo-implementer
+
+agent-collab review \
+  --task TASK-001-refactor-api-client \
+  --branch agent/impl/TASK-001-refactor-api-client
+
+agent-collab test-report \
+  --task TASK-001-refactor-api-client \
+  --branch agent/impl/TASK-001-refactor-api-client
+
+agent-collab merge-recommendation \
+  --task TASK-001-refactor-api-client \
+  --recommendation needs_changes \
+  --risk medium \
+  --human-approval-required yes
+```
+
+## Workflow
+
+Agent Collab is intentionally simple: it makes repository state the source of truth and makes every handoff inspectable.
+
+| Step | What happens | Artifact |
+| --- | --- | --- |
+| 1. Plan | Scope the task, risks, checks, and ownership. | `.agent/tasks/` |
+| 2. Isolate | Assign each role a branch and git worktree. | `.agent/protocols/` |
+| 3. Implement | Make scoped changes and record verification. | commits and handoff |
+| 4. Review | Inspect the diff for correctness, security, scope, and maintainability. | `.agent/reviews/` |
+| 5. Test | Run required checks or document why they were skipped. | `.agent/test-reports/` |
+| 6. Gate | Recommend merge, changes, escalation, or rejection. | merge recommendation |
+
+Agents should start every session by confirming:
+
+```txt
+role, task, branch, worktree, relevant handoffs, current git status, and next action
+```
+
+Before editing, run:
+
+```bash
+git status
+git branch --show-current
+git log --oneline -5
+```
+
+Before handing off, run:
+
+```bash
+git status
+git diff
+git diff --stat
+```
+
+## The `.agent/` Directory
+
+`agent-collab init` creates a coordination workspace in the target repository:
+
+```txt
+.agent/
+  README.md
+  status.json
+  tasks/
+  handoffs/
+  decisions/
+  reviews/
+  test-reports/
+  risks/
+  protocols/
+  scratch/
+```
+
+| Path | Purpose |
+| --- | --- |
+| `.agent/status.json` | Active task, current phase, protected branches, agent assignments, and merge status. |
+| `.agent/tasks/` | Task goals, non-goals, scope, acceptance criteria, checks, risks, and result. |
+| `.agent/handoffs/` | Structured role-to-role handoffs with changed files, verification, risks, and next steps. |
+| `.agent/decisions/` | ADRs for architectural or policy decisions. |
+| `.agent/reviews/` | Diff review and final merge recommendations. |
+| `.agent/test-reports/` | Verification evidence, failures, skipped checks, and coverage gaps. |
+| `.agent/risks/` | Conflicts, blockers, high-risk notes, and human decision requests. |
+| `.agent/protocols/` | File ownership maps and task-specific coordination rules. |
+| `.agent/scratch/` | Temporary notes that are not durable project truth. |
+
+## CLI Reference
+
+Run commands from the target repository root:
+
+```bash
+agent-collab <command>
+```
+
+Or pass an explicit repository:
+
+```bash
+agent-collab <command> --root /path/to/repo
+```
+
+| Command | Creates |
+| --- | --- |
+| `init` | `.agent/` directory structure and `status.json` |
+| `new-task` | scoped task file |
+| `handoff` | role handoff |
+| `adr` | architecture decision record |
+| `review` | review template |
+| `test-report` | verification report |
+| `conflict` | conflict or blocker note |
+| `file-ownership` | file ownership map |
+| `human-decision` | human decision request |
+| `merge-recommendation` | final merge recommendation |
+
+Use built-in help for the exact options:
+
+```bash
+agent-collab --help
+agent-collab new-task --help
+agent-collab handoff --help
+```
+
+## Agent Roles
+
+Use only the roles needed for the task.
+
+| Role | Responsibility |
+| --- | --- |
+| Coordinator | Scope, sequence, assign worktrees, track status, and recommend merge readiness. |
+| Architect | Define boundaries, ADRs, risk analysis, and test strategy. |
+| Implementer | Make scoped code changes, add tests, commit, and write implementation handoff. |
+| Reviewer | Review the diff for correctness, architecture, security, reliability, and scope. |
+| Tester | Run verification, reproduce failures, and write test reports. |
+| Documentation | Update README, examples, migration notes, and operational docs. |
+| Integration | Resolve conflicts, verify branch freshness, run final checks, and prepare merge guidance. |
+
+## Worktree Strategy
+
+One agent should not edit the same working directory as another agent. Give each role or task slice a separate worktree:
+
+```txt
+repo/
+../repo-architect/
+../repo-implementer-api/
+../repo-implementer-ui/
+../repo-reviewer/
+../repo-tester/
+../repo-integration/
+```
+
+Recommended branch names:
+
+```txt
+agent/architect/TASK-001-refactor-api-client
+agent/impl/TASK-001-refactor-api-client
+agent/impl-frontend/TASK-001-refactor-api-client
+agent/impl-backend/TASK-001-refactor-api-client
+agent/review/TASK-001-refactor-api-client
+agent/test/TASK-001-refactor-api-client
+agent/docs/TASK-001-refactor-api-client
+agent/integration/TASK-001-refactor-api-client
+```
+
+Parallel work is safest when agents own different files or layers. If two agents may touch overlapping code, create a file ownership map before implementation:
+
+```bash
+agent-collab file-ownership --task TASK-001-refactor-api-client
+```
+
+## Using The Skill
+
+This repository also ships a portable agent skill:
+
+- `SKILL.md` is the agent-facing entry point.
+- `references/` contains the deeper playbooks.
+- `agents/openai.yaml` provides optional runtime metadata for platforms that read skill catalogs.
+
+To use it manually, point an agent at `SKILL.md` and ask it to follow Agent Collab for the current repository task.
+
+Example prompt:
+
+```txt
+Use Agent Collab to coordinate multiple coding agents on this repository. Start by identifying the task, role, branch, worktree, risks, and required handoffs.
+```
+
+## Merge Readiness
+
+A task is merge-ready only when:
+
+- acceptance criteria are met;
+- scope is controlled;
+- implementation handoff exists;
+- review exists and is not blocking;
+- required checks passed or skips are justified;
+- test report exists for non-trivial changes;
+- high-risk issues are resolved or escalated;
+- no secrets are present;
+- rollback notes exist when needed;
+- human approval exists where required.
+
+Agent Collab is not a replacement for CI, branch protection, human architectural judgment, or security review. It is a protocol and artifact generator that makes multi-agent work easier to inspect, recover, and merge deliberately.
 
 ## Repository Layout
 
 ```txt
 agent-collab/
-  pyproject.toml
   SKILL.md
   README.md
+  LICENSE
+  pyproject.toml
   agents/
     openai.yaml
   references/
@@ -71,564 +296,27 @@ agent-collab/
     test_coordination.py
 ```
 
-### `SKILL.md`
+## Development
 
-The agent-facing runtime instructions. Any compatible agent runtime can load this file, and humans can also use it as the concise operating guide.
-
-### `agents/openai.yaml`
-
-Optional runtime metadata for platforms that read skill catalog metadata. It is not required for standalone use.
-
-### `references/`
-
-Detailed playbooks that keep `SKILL.md` concise while preserving a comprehensive protocol.
-
-### `src/agent_collab/`
-
-The installable Python package. `cli.py` contains the Typer CLI and `coordination.py` contains the artifact-generation logic.
-
-## Installation And Use
-
-Install the CLI from PyPI:
-
-```bash
-python3 -m pip install agent-collab
-```
-
-Package page:
-
-```txt
-https://pypi.org/project/agent-collab/
-```
-
-Install the latest version directly from GitHub:
-
-```bash
-python3 -m pip install "git+https://github.com/egesabanci/agent-collab.git"
-```
-
-Or clone this repository wherever you keep shared agent instructions or workflow tools:
-
-```bash
-git clone git@github.com:egesabanci/agent-collab.git
-cd agent-collab
-```
-
-Then install the CLI from the local checkout:
-
-```bash
-python3 -m pip install .
-```
-
-For local development, install it in editable mode:
-
-```bash
-python3 -m pip install -e .
-```
-
-Use it in any of these ways:
-
-- Ask an agent to follow `SKILL.md`.
-- Place this folder in your agent runtime's skill, plugin, or instruction directory if it supports one.
-- Run the `agent-collab` CLI to create `.agent/` coordination artifacts.
-- Have human coordinators use the README and reference files as the team protocol.
-
-Example agent prompt:
-
-```txt
-Use Agent Collab to coordinate multiple coding agents safely on this repository task.
-```
-
-## Quick Start
-
-From the repository where agents will collaborate, initialize the coordination directory:
-
-```bash
-agent-collab init
-```
-
-Create a task:
-
-```bash
-agent-collab new-task \
-  --id TASK-001 \
-  --title "API Client Refactor" \
-  --owner coordinator \
-  --risk medium \
-  --check lint \
-  --check typecheck \
-  --check tests \
-  --check build
-```
-
-Create role worktrees:
-
-```bash
-git fetch origin
-git worktree add ../repo-implementer -b agent/impl/TASK-001-api-client-refactor origin/main
-git worktree add ../repo-reviewer -b agent/review/TASK-001-api-client-refactor origin/main
-git worktree add ../repo-tester -b agent/test/TASK-001-api-client-refactor origin/main
-```
-
-After implementation, create a handoff:
-
-```bash
-agent-collab handoff \
-  --task TASK-001-api-client-refactor \
-  --role implementer \
-  --branch agent/impl/TASK-001-api-client-refactor \
-  --worktree ../repo-implementer
-```
-
-Create review and test reports:
-
-```bash
-agent-collab review \
-  --task TASK-001-api-client-refactor \
-  --branch agent/impl/TASK-001-api-client-refactor
-
-agent-collab test-report \
-  --task TASK-001-api-client-refactor \
-  --branch agent/impl/TASK-001-api-client-refactor
-```
-
-Prepare merge readiness:
-
-```bash
-agent-collab merge-recommendation \
-  --task TASK-001-api-client-refactor \
-  --recommendation needs_changes \
-  --risk medium \
-  --human-approval-required yes
-```
-
-## The `.agent/` Directory
-
-Agent Collab creates and uses a `.agent/` directory in the target repository:
-
-```txt
-.agent/
-  README.md
-  status.json
-  tasks/
-  handoffs/
-  decisions/
-  reviews/
-  test-reports/
-  risks/
-  protocols/
-  scratch/
-```
-
-This directory is the durable memory layer for the agent team.
-
-### `.agent/status.json`
-
-Tracks the active task, current phase, protected branches, assigned agents, and merge readiness.
-
-Only a coordinator agent or explicitly assigned agent should update this file. If ownership is unclear, write a handoff or risk note instead of racing on shared state.
-
-### `.agent/tasks/`
-
-Contains scoped task definitions with:
-
-- Goal
-- Non-goals
-- Context
-- Scope
-- Acceptance criteria
-- Required checks
-- Risk level
-- Dependencies
-- Open questions
-- Final result
-
-### `.agent/handoffs/`
-
-Contains structured handoffs between roles.
-
-A valid handoff answers:
-
-- What changed?
-- Why did it change?
-- Where did it change?
-- How was it verified?
-- What risks remain?
-- What should the next agent do?
-
-### `.agent/decisions/`
-
-Contains ADRs for architectural decisions.
-
-Use ADRs for changes to:
-
-- System boundaries
-- Authentication or authorization behavior
-- Data models
-- API contracts
-- Runtime architecture
-- Deployment topology
-- External services
-- Error handling policy
-- Queue or job architecture
-- Security-sensitive patterns
-
-### `.agent/reviews/`
-
-Contains reviewer output. Reviewers must inspect the diff, not just final files.
-
-Reviews cover:
-
-- Task alignment
-- Correctness
-- Architecture
-- Security
-- Reliability
-- Maintainability
-- Test coverage
-- Scope control
-- Rollback safety
-
-### `.agent/test-reports/`
-
-Contains verification evidence:
-
-- Environment
-- Commands run
-- Result table
-- Failures
-- Suspected cause
-- Reproduction steps
-- Coverage gaps
-- Recommendation
-
-### `.agent/risks/`
-
-Contains conflicts, blockers, high-risk notes, and human decision requests.
-
-Use this directory when two agents touch overlapping files or when a decision needs human approval.
-
-### `.agent/protocols/`
-
-Contains task-specific protocols, especially file ownership maps for parallel work.
-
-## Agent Roles
-
-Agent Collab defines a small set of roles. Use only the roles needed for the task.
-
-| Role | Purpose |
-| --- | --- |
-| Coordinator | Scope, sequencing, assignment, worktree routing, merge recommendation |
-| Architect | Design, boundaries, ADRs, risk analysis, test strategy |
-| Implementer | Scoped code changes, tests, commits, implementation handoff |
-| Reviewer | Diff review for correctness, architecture, security, reliability, maintainability |
-| Tester | Verification, reproduction, smoke tests, test reports |
-| Documentation | README, docs, examples, migration notes, operational notes |
-| Integration | Conflict resolution, branch freshness, final checks, merge readiness |
-
-## Standard Agent Workflow
-
-Every agent should begin by confirming:
-
-1. Role
-2. Assigned task
-3. Branch
-4. Worktree
-5. Task file
-6. Relevant handoffs
-7. Relevant ADRs
-8. Current git status
-9. Project check commands
-10. Planned next action
-
-Before editing, an agent should run:
-
-```bash
-git status
-git branch --show-current
-git log --oneline -5
-```
-
-Before handoff, an agent should run:
-
-```bash
-git status
-git diff
-git diff --stat
-```
-
-## CLI Reference
-
-The CLI is built with Typer and installed as `agent-collab`.
-
-Run from the target repository root:
-
-```bash
-agent-collab <command>
-```
-
-Or pass an explicit target:
-
-```bash
-agent-collab <command> --root /path/to/repo
-```
-
-The command examples below assume the package is installed in your current Python environment.
-
-### `init`
-
-Create the `.agent/` directory structure.
-
-```bash
-agent-collab init \
-  --project example-project \
-  --phase planning \
-  --protected-branches main,master,production,staging
-```
-
-### `new-task`
-
-Create a task file.
-
-```bash
-agent-collab new-task \
-  --id TASK-002 \
-  --title "Improve checkout error handling" \
-  --owner implementer \
-  --risk high \
-  --check lint \
-  --check tests \
-  --check build
-```
-
-### `handoff`
-
-Create a role handoff.
-
-```bash
-agent-collab handoff \
-  --task TASK-002-improve-checkout-error-handling \
-  --role implementer \
-  --branch agent/impl/TASK-002-improve-checkout-error-handling \
-  --worktree ../repo-implementer \
-  --status needs_review \
-  --next-agent reviewer
-```
-
-### `adr`
-
-Create an architecture decision record.
-
-```bash
-agent-collab adr \
-  --number 1 \
-  --title "Use Server-Side API Wrapper"
-```
-
-### `review`
-
-Create a review template.
-
-```bash
-agent-collab review \
-  --task TASK-002-improve-checkout-error-handling \
-  --branch agent/impl/TASK-002-improve-checkout-error-handling \
-  --status changes_requested \
-  --recommendation request_changes
-```
-
-### `test-report`
-
-Create a test report template.
-
-```bash
-agent-collab test-report \
-  --task TASK-002-improve-checkout-error-handling \
-  --branch agent/impl/TASK-002-improve-checkout-error-handling \
-  --recommendation needs_fix
-```
-
-### `conflict`
-
-Create a conflict note.
-
-```bash
-agent-collab conflict \
-  --task TASK-002-improve-checkout-error-handling \
-  --title "Checkout API and Billing Boundary" \
-  --type architectural \
-  --requires-human yes
-```
-
-### `file-ownership`
-
-Create a file ownership map.
-
-```bash
-agent-collab file-ownership \
-  --task TASK-002-improve-checkout-error-handling
-```
-
-### `human-decision`
-
-Create a human decision note.
-
-```bash
-agent-collab human-decision \
-  --task TASK-002-improve-checkout-error-handling \
-  --title "Choose Billing Retry Policy" \
-  --risk high
-```
-
-### `merge-recommendation`
-
-Create a final merge recommendation.
-
-```bash
-agent-collab merge-recommendation \
-  --task TASK-002-improve-checkout-error-handling \
-  --recommendation needs_human_decision \
-  --risk high \
-  --human-approval-required yes
-```
-
-## Worktree Strategy
-
-Agent Collab expects one worktree per agent role or independently owned task slice.
-
-Example:
-
-```txt
-repo/
-../repo-architect/
-../repo-implementer-api/
-../repo-implementer-ui/
-../repo-reviewer/
-../repo-tester/
-../repo-integration/
-```
-
-Recommended branch names:
-
-```txt
-agent/architect/TASK-002-api-client-refactor
-agent/impl/TASK-002-api-client-refactor
-agent/impl-frontend/TASK-002-api-client-refactor
-agent/impl-backend/TASK-002-api-client-refactor
-agent/review/TASK-002-api-client-refactor
-agent/test/TASK-002-api-client-refactor
-agent/docs/TASK-002-api-client-refactor
-agent/integration/TASK-002-api-client-refactor
-```
-
-## Safe Parallelization
-
-Parallel work is safest when agents own different parts of the system.
-
-Good split:
-
-```txt
-Agent A: backend API route
-Agent B: frontend UI state
-Agent C: documentation
-Agent D: tests
-```
-
-Risky split:
-
-```txt
-Agent A: auth middleware
-Agent B: API client
-Agent C: session handling
-Agent D: routing layer
-```
-
-Risky splits require a file ownership map and explicit integration plan.
-
-## Merge Readiness
-
-A task is merge-ready only when:
-
-- Acceptance criteria are met.
-- Scope is controlled.
-- Implementation handoff exists.
-- Review exists.
-- Required checks were run or skipped with clear justification.
-- Test report exists for non-trivial changes.
-- No blocking questions remain.
-- No unresolved high-risk issues remain.
-- No secrets are present.
-- Rollback path is documented.
-- Human approval exists where required.
-
-## Security Model
-
-Agent Collab treats these areas as high risk:
-
-- Authentication
-- Authorization
-- User identity
-- Sessions and cookies
-- CSRF and CORS
-- Billing and payments
-- Webhooks
-- Admin panels
-- Database migrations
-- File uploads
-- Multi-tenant data access
-- PII handling
-- Logging or analytics containing user data
-- Deployment secrets
-- Infrastructure configuration
-
-High-risk changes require focused review and often human approval.
-
-If a secret is committed, stop and escalate. Do not merely delete it in a later commit and continue.
-
-## What Agent Collab Is Not
-
-Agent Collab is not:
-
-- A replacement for CI.
-- A replacement for GitHub branch protection.
-- A replacement for human architectural judgment.
-- A merge bot.
-- A distributed locking system.
-- A guarantee that parallel work will never conflict.
-
-It is a protocol and artifact generator that makes multi-agent work more explicit, inspectable, and recoverable.
-
-## Validation
-
-If your agent runtime provides a package or skill validator, run it against the repository root. At minimum, validate the frontmatter and metadata YAML:
-
-```bash
-python3 - <<'PY'
-from pathlib import Path
-import yaml
-
-skill = Path("SKILL.md").read_text()
-yaml.safe_load(skill.split("---", 2)[1])
-yaml.safe_load(Path("agents/openai.yaml").read_text())
-print("metadata ok")
-PY
-```
-
-Validate the package and CLI with:
-
-```bash
-python3 -B -m py_compile src/agent_collab/*.py
-agent-collab --help
-```
-
-Run the unit test suite:
+Install locally:
 
 ```bash
 python3 -m pip install -e ".[dev]"
+```
+
+Run tests:
+
+```bash
 python3 -m pytest
 ```
 
-Smoke-test artifact generation in a temporary directory:
+Validate the skill metadata:
+
+```bash
+python3 /path/to/quick_validate.py .
+```
+
+Smoke-test artifact generation:
 
 ```bash
 tmpdir="$(mktemp -d)"
@@ -637,22 +325,6 @@ agent-collab new-task --root "$tmpdir" --id TASK-001 --title "Demo Task"
 find "$tmpdir/.agent" -maxdepth 2 -type f | sort
 rm -rf "$tmpdir"
 ```
-
-## Development Notes
-
-Keep `SKILL.md` concise and agent-facing. Put detailed protocol material in `references/`, and keep deterministic, repeatable generation behavior in `src/agent_collab/`.
-
-When changing the protocol:
-
-1. Update `SKILL.md` only if the runtime entry point changes.
-2. Update the relevant reference file for detailed behavior.
-3. Update `src/agent_collab/coordination.py` when templates or artifact names change, and `src/agent_collab/cli.py` when command behavior changes.
-4. Run validation and a temp-dir smoke test.
-5. Use a conventional commit message.
-
-## Suggested Repository Description
-
-A general-purpose coordination protocol for multiple AI coding agents working on one repository with worktree isolation, structured handoffs, review, testing, and merge readiness.
 
 ## License
 
