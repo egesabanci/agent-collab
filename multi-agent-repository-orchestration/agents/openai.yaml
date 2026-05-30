@@ -1,4 +1,0 @@
-interface:
-  display_name: "Multi-Agent Repo Orchestration"
-  short_description: "Coordinate agents on one repository"
-  default_prompt: "Use $multi-agent-repository-orchestration to coordinate multiple coding agents safely on this repository task."

@@ -1,9 +1,9 @@
 ---
-name: multi-agent-repository-orchestration
+name: agent-collab
 description: Coordinate multiple AI coding agents working on the same repository with git worktree isolation, task ownership, structured handoffs, review, testing, merge readiness, conflict handling, and human escalation. Use when Codex needs to orchestrate parallel or sequential agents on one codebase, split work across architect/implementer/reviewer/tester/documentation/integration roles, create .agent coordination files, prevent agents from overwriting each other, or safely prepare multi-agent repository changes for merge.
 ---
 
-# Multi-Agent Repository Orchestration
+# Agent Collab
 
 ## Overview
 
@@ -25,13 +25,13 @@ Use this skill to run multiple AI agents on one repository without shared workin
 1. Initialize coordination files if `.agent/` does not exist:
 
    ```bash
-   python3 /path/to/multi-agent-repository-orchestration/scripts/agent_coordination.py init
+   python3 scripts/agent_coordination.py init
    ```
 
 2. Create or read the task file before assigning agents:
 
    ```bash
-   python3 /path/to/multi-agent-repository-orchestration/scripts/agent_coordination.py new-task --id TASK-001 --title "API Client Refactor"
+   python3 scripts/agent_coordination.py new-task --id TASK-001 --title "API Client Refactor"
    ```
 
 3. Decide whether work can run in parallel. Parallelize only when agents have disjoint file ownership or a documented coordination plan.
@@ -59,15 +59,19 @@ Use this repository structure:
   scratch/
 ```
 
+Run commands from the target repository root. If the skill is installed elsewhere, resolve `scripts/agent_coordination.py` relative to this skill directory and pass `--root <repo-root>`.
+
 Create durable artifacts with:
 
 ```bash
-python3 /path/to/multi-agent-repository-orchestration/scripts/agent_coordination.py handoff --task TASK-001-api-client-refactor --role implementer --branch agent/impl/TASK-001-api-client-refactor --worktree ../repo-implementer
-python3 /path/to/multi-agent-repository-orchestration/scripts/agent_coordination.py review --task TASK-001-api-client-refactor --branch agent/impl/TASK-001-api-client-refactor
-python3 /path/to/multi-agent-repository-orchestration/scripts/agent_coordination.py test-report --task TASK-001-api-client-refactor --branch agent/impl/TASK-001-api-client-refactor
-python3 /path/to/multi-agent-repository-orchestration/scripts/agent_coordination.py adr --number 1 --title "Use Server-Side API Wrapper"
-python3 /path/to/multi-agent-repository-orchestration/scripts/agent_coordination.py conflict --task TASK-001-api-client-refactor --title "API Client and Auth Changes"
-python3 /path/to/multi-agent-repository-orchestration/scripts/agent_coordination.py merge-recommendation --task TASK-001-api-client-refactor
+python3 scripts/agent_coordination.py handoff --task TASK-001-api-client-refactor --role implementer --branch agent/impl/TASK-001-api-client-refactor --worktree ../repo-implementer
+python3 scripts/agent_coordination.py review --task TASK-001-api-client-refactor --branch agent/impl/TASK-001-api-client-refactor
+python3 scripts/agent_coordination.py test-report --task TASK-001-api-client-refactor --branch agent/impl/TASK-001-api-client-refactor
+python3 scripts/agent_coordination.py adr --number 1 --title "Use Server-Side API Wrapper"
+python3 scripts/agent_coordination.py conflict --task TASK-001-api-client-refactor --title "API Client and Auth Changes"
+python3 scripts/agent_coordination.py file-ownership --task TASK-001-api-client-refactor
+python3 scripts/agent_coordination.py human-decision --task TASK-001-api-client-refactor --title "Choose Auth Boundary"
+python3 scripts/agent_coordination.py merge-recommendation --task TASK-001-api-client-refactor
 ```
 
 Read [references/artifacts-and-templates.md](references/artifacts-and-templates.md) for file names, required fields, source-of-truth priority, and complete template guidance.

@@ -7,7 +7,7 @@ Use only the roles needed for the task. A small, low-risk change may need one im
 Every agent should start with this routine:
 
 ```md
-I will operate under the Multi-Agent Repository Orchestration Skill.
+I will operate under the Agent Collab skill.
 
 Before making changes, I will:
 

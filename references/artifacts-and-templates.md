@@ -78,6 +78,8 @@ Create a task:
 python3 scripts/agent_coordination.py new-task --id TASK-002 --title "API Client Refactor"
 ```
 
+Run commands from the target repository root. If this skill is installed outside the target repository, resolve `scripts/agent_coordination.py` relative to the skill directory and pass `--root <repo-root>`.
+
 ## Handoffs
 
 Path: `.agent/handoffs/TASK-<number>-<role>-<timestamp>.md`
@@ -186,6 +188,12 @@ Path: `.agent/protocols/file-ownership-TASK-<number>.md`
 
 Use file ownership maps for complex or parallel tasks. Include each agent's owned paths, forbidden paths, integration assumptions, dependencies, expected merge order, and known conflict areas.
 
+Create a file ownership map:
+
+```bash
+python3 scripts/agent_coordination.py file-ownership --task TASK-002-api-client-refactor
+```
+
 Example:
 
 ```md
@@ -217,3 +225,9 @@ Must not edit:
 ## Final Merge Recommendation
 
 Create a merge recommendation before asking the user to merge. It must include recommendation, summary, implementation handoff, review, test report, check table, risk level, remaining risks, rollback plan, human approval requirement, and next step.
+
+## Human Decision Notes
+
+Path: `.agent/risks/TASK-<number>-human-decision-<short-name>.md`
+
+Create a human decision note when a destructive, security-sensitive, production-affecting, billing, licensing, migration, public API, or ambiguous architecture decision blocks safe progress.

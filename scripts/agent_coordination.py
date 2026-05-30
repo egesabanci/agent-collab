@@ -10,7 +10,7 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
-from typing import Optional
+from typing import List, Optional
 
 
 AGENT_DIRS = [
@@ -65,7 +65,7 @@ def display_task_id(task_key: str) -> str:
     return f"{match.group(1)}: {match.group(2).replace('-', ' ').title()}"
 
 
-def split_csv(value: str) -> list[str]:
+def split_csv(value: str) -> List[str]:
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
@@ -660,6 +660,123 @@ def command_merge_recommendation(args: argparse.Namespace) -> None:
     write_new(base / "reviews" / file_name, dedent(content), args.force)
 
 
+def command_file_ownership(args: argparse.Namespace) -> None:
+    root = repo_root(args.root)
+    base = ensure_agent_dirs(root)
+    task_key = normalize_task_key(args.task)
+    content = f"""
+    # File Ownership: {display_task_id(task_key)}
+
+    ## Purpose
+
+    Define which agents own which paths for this task so parallel work stays reviewable and conflicts are surfaced early.
+
+    ## Backend implementer
+
+    Owns:
+
+    - TODO
+
+    Must not edit:
+
+    - TODO
+
+    ## Frontend implementer
+
+    Owns:
+
+    - TODO
+
+    Must not edit:
+
+    - TODO
+
+    ## Tester
+
+    Owns:
+
+    - TODO
+
+    Must not edit implementation unless assigned.
+
+    ## Integration assumptions
+
+    - TODO
+
+    ## Dependencies between branches
+
+    - TODO
+
+    ## Expected merge order
+
+    1. TODO
+
+    ## Known conflict areas
+
+    - TODO
+    """
+    file_name = f"file-ownership-{task_key}.md"
+    write_new(base / "protocols" / file_name, dedent(content), args.force)
+
+
+def command_human_decision(args: argparse.Namespace) -> None:
+    root = repo_root(args.root)
+    base = ensure_agent_dirs(root)
+    task_key = normalize_task_key(args.task)
+    slug = slugify(args.title)
+    content = f"""
+    # Human Decision Needed: {args.title}
+
+    ## Task
+
+    {task_key}
+
+    ## Context
+
+    TODO
+
+    ## Why this needs a human decision
+
+    TODO
+
+    ## Options
+
+    ### Option A
+
+    Pros:
+
+    - TODO
+
+    Cons:
+
+    - TODO
+
+    ### Option B
+
+    Pros:
+
+    - TODO
+
+    Cons:
+
+    - TODO
+
+    ## Recommendation
+
+    TODO
+
+    ## Risk
+
+    {args.risk}
+
+    ## Default safe action
+
+    TODO
+    """
+    file_name = f"{task_key}-human-decision-{slug}.md"
+    write_new(base / "risks" / file_name, dedent(content), args.force)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", help="Repository root. Defaults to git root or cwd.")
@@ -757,6 +874,22 @@ def build_parser() -> argparse.ArgumentParser:
     merge_parser.add_argument("--human-approval-required", default="yes", choices=["yes", "no"])
     merge_parser.add_argument("--force", action="store_true")
     merge_parser.set_defaults(func=command_merge_recommendation)
+
+    ownership_parser = subparsers.add_parser(
+        "file-ownership", help="Create a file ownership map template."
+    )
+    ownership_parser.add_argument("--task", required=True)
+    ownership_parser.add_argument("--force", action="store_true")
+    ownership_parser.set_defaults(func=command_file_ownership)
+
+    decision_parser = subparsers.add_parser(
+        "human-decision", help="Create a human decision note."
+    )
+    decision_parser.add_argument("--task", required=True)
+    decision_parser.add_argument("--title", required=True)
+    decision_parser.add_argument("--risk", default="medium", choices=["low", "medium", "high"])
+    decision_parser.add_argument("--force", action="store_true")
+    decision_parser.set_defaults(func=command_human_decision)
 
     return parser
 

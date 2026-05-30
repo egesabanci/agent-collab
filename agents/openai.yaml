@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Collab"
+  short_description: "Coordinate agents on one repo"
+  default_prompt: "Use $agent-collab to coordinate multiple coding agents safely on this repository task."
