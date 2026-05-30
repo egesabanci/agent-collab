@@ -611,4 +611,4 @@ A general-purpose coordination protocol for multiple AI coding agents working on
 
 ## License
 
-No license has been selected yet. Add a license before accepting external contributions or depending on this repository as an open-source package.
+Agent Collab is released under the MIT License. See [LICENSE](LICENSE).
